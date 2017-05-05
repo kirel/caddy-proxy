@@ -15,8 +15,8 @@ services:
       - 80:80
       - 443:443
     volumes:
-      - "../volumes/caddy/config:/etc/caddy/config"
-      - "../volumes/caddy/certs:/etc/caddy/certs"
+      - "caddyconfig:/etc/caddy/config"
+      - "caddycerts:/etc/caddy/certs"
     environment:
       - CADDYPATH=/etc/caddy/certs
     networks:
@@ -25,14 +25,20 @@ services:
 
   caddy-gen:
     container_name: caddy-gen
-    image: jwilder/docker-gen:0.7.3
+    build:
+      context: ..
+      dockerfile: caddy/Dockerfile-docker-gen
     volumes:
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
-      - "../volumes/docker-gen/templates:/etc/docker-gen/templates:ro"
-      - "../volumes/docker-gen/config:/etc/docker-gen/config:ro"
     volumes_from:
       - caddy
     environment:
       LETSENCRYPT_EMAIL: "email@example.com"
     command: -config /etc/docker-gen/config/docker-gen.cfg
     restart: always
+
+volumes:
+  caddyconfig:
+    driver: local
+  caddycerts:
+    driver: local
