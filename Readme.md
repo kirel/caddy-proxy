@@ -15,52 +15,11 @@ $ docker network create -d bridge caddy-proxy
 Then Clone this repository.
 
 ```bash
-$ git clone https://github.com/drlogout/caddy-proxy
+$ git clone https://github.com/kirel/caddy-proxy
 $ cd caddy-proxy
 ```
 
-Set a proper email address for `LETSENCRYPT_EMAIL` in `caddy/docker-compose.yml`.
-
-```yaml
-version: "2"
-
-networks:
-  proxy-tier:
-    external:
-      name: caddy-proxy
-
-services:
-  caddy:
-    container_name: caddy
-    image: drlogout/caddy:0.9.5
-    # remove -ca=https://acme-staging.api.letsencrypt.org/directory in production
-    command: --conf /etc/caddy/config/Caddyfile --log stdout -ca=https://acme-staging.api.letsencrypt.org/directory
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - "../volumes/config:/etc/caddy/config"
-      - "../volumes/certs:/etc/caddy/certs"
-    environment:
-      - CADDYPATH=/etc/caddy/certs
-    networks:
-      - proxy-tier
-    restart: always
-
-  caddy-gen:
-    container_name: caddy-gen
-    image: jwilder/docker-gen:0.7.3
-    volumes:
-      - "/var/run/docker.sock:/tmp/docker.sock:ro"
-      - "../volumes/templates:/etc/docker-gen/templates:ro"
-    volumes_from:
-      - caddy
-    environment:
-      LETSENCRYPT_EMAIL: "<YOUR EMAIL>"
-    command: -notify "docker restart caddy" -watch -wait 5s:30s /etc/docker-gen/templates/caddy.tmpl /etc/caddy/config/Caddyfile
-    restart: always
-
-```
+Set a proper email address for `LETSENCRYPT_EMAIL` in [`caddy/docker-compose.yml`](caddy/docker-compose.yml).
 
 And start the `caddy` and `caddy-gen` containers.
 
@@ -69,7 +28,7 @@ $ cd caddy
 $ docker-compose up -d
 ```
 
-Then set the `VIRTUAL_HOST` variable to a fully qualified domain name in `app1/docker-compose.yml` (resp. in `app2/docker-compose.yml`).
+Then set the `VIRTUAL_HOST` variable to a fully qualified domain name in your app (see `app1/docker-compose.yml` or `app2/docker-compose.yml` for examples).
 
 ```yaml
 version: "2"
@@ -93,12 +52,11 @@ services:
 
 ```
 
-And start the `app1` container (resp. `app2`).
+Start your app:
 
 ```bash
-$ cd ../app1
+$ cd ../yourapp
 $ docker-compose up -d
 ```
 
 Please note, that this `caddy` configuration uses the [Letsencrypt staging environment](https://letsencrypt.org/docs/staging-environment/). This means your browser will warn you about an insecure connection. For use in production remove the `-ca=https://acme-staging.api.letsencrypt.org/directory` flag in `caddy/docker-compose.yaml`.
-
